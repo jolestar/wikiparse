@@ -10,7 +10,8 @@
             [clojurewerkz.elastisch.rest.index :as es-index]
             [clojurewerkz.elastisch.rest.bulk :as es-bulk])
   (:import (org.apache.commons.compress.compressors.bzip2 BZip2CompressorInputStream)
-           (java.util.concurrent.atomic AtomicLong))
+           (java.util.concurrent.atomic AtomicLong)
+           (java.io FileInputStream))
   (:gen-class))
 
 (def script-id "wikiupdate")
@@ -49,7 +50,13 @@
   "Returns a streaming Reader for the given compressed BZip2
   file. Use within (with-open)."
   [filename]
-  (-> filename io/file io/input-stream BZip2CompressorInputStream. io/reader))
+  (
+    if (.endsWith filename ".xml")
+    (-> filename io/input-stream io/reader)
+    (-> filename io/file io/input-stream BZip2CompressorInputStream. io/reader)
+  ))
+
+
 
 ;; XML Mapping functions + helpers
 
@@ -186,7 +193,7 @@
               :body_simple {:type :string :analyzer :simple}}}
      :suggest {
                :type :completion
-               :index_analyzer :simple
+               :analyzer :simple
                :search_analyzer :simple}
      :timestamp {:type :date}
      :format {:type :string :index :not_analyzed}
@@ -204,7 +211,7 @@
     (es-index/create conn name
                      :settings {
                                 :index {
-                                        :number_of_shards 1,
+                                        :number_of_shards 5,
                                         :number_of_replicas 0
                                         :refresh_interval "300s"
                                         :gateway {:local {:sync "120s"}}
