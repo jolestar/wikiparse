@@ -2,14 +2,16 @@
 
 Imports wikipedia data dump XML into elasticsearch.
 
+## Package
 
+lein uberjar
 
 ## Usage
 
 * [NOTE] This is the most cross-platform way to run the script. See the section on running it faster below for a 2-4x optimization in terms of load time.
 * Download the pages-articles XML dump, find the link on [this page](http://en.wikipedia.org/wiki/Wikipedia:Database_download#XML_schema). You want pages-articles.xml.bz2. DO NOT UNCOMPRESS THE BZ2 FILE.
 * From the releases page, download the [wikiparse JAR](https://github.com/andrewvc/wikiparse/releases)
-* Run the jar on the BZ2 file: `java -jar -Xmx3g -Xms3g wikiparse-0.2.1.jar --es http://localhost:9200 /var/lib/elasticsearch/enwiki-latest-pages-articles.xml.bz2`
+* Run the jar on the BZ2 file: `java -jar -Xmx3g -Xms3g wikiparse-1.2.6-standalone.jar --es http://localhost:9200 /var/lib/elasticsearch/enwiki-latest-pages-articles.xml.bz2`
 * The data will be indexed to an index named `en-wikipedia` (by default).
   This can be changed with `--index` parameter.
 
@@ -20,11 +22,12 @@ The fastest way to run this code is by using the run-fast.sh shell script in thi
 The source code of the `run-fast.sh` script is included below.
 
 ```bash
-#!/bin/sh
 JAR=$1
 DUMP=$2
-curl -XDELETE http://localhost:9200
-bzip2 -dcf $DUMP | java -Xmx3g -Xms3g -jar $JAR -p redirects && bzip2 -dcf $DUMP | java -Xmx3g -Xms3g -jar $JAR -p full
+INDEX=$3
+INDEX=${3:-"en-wikipedia"}
+ES="http://localhost:9200"
+bzip2 -dcf $DUMP | java -Xmx3g -Xms3g -jar $JAR --index $INDEX -p redirects --es $ES && bzip2 -dcf $DUMP | java -Xmx3g -Xms3g -jar $JAR --index $INDEX -p full --es $ES
 ```
 
 ## License
